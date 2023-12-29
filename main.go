@@ -124,7 +124,7 @@ func configureClusterClient(namespace *string) *kubernetes.Clientset {
 func isOwnedByCronJob(job batchv1.Job, cronjob batchv1.CronJob) bool {
 	isowned := false
 	for _, owner := range job.OwnerReferences {
-		if owner.UID == cronjob.UID && *owner.Controller {
+		if owner.UID == cronjob.UID /*&& *owner.Controller*/{
 			isowned = true
 			break
 		}
