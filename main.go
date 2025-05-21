@@ -26,12 +26,12 @@ func main() {
 	coreapi := clientset.CoreV1()
 	batchapi := clientset.BatchV1()
 
-	cronjob, err := batchapi.CronJobs(flags.Namespace).Get(context.TODO(), flags.Name, metav1.GetOptions{})
+	cronjob, err := batchapi.CronJobs(flags.Namespace).Get(context.Background(), flags.Name, metav1.GetOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	jobs, err := batchapi.Jobs(flags.Namespace).List(context.TODO(), metav1.ListOptions{})
+	jobs, err := batchapi.Jobs(flags.Namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func setFlags(args []string) CmdFlags {
 			os.Exit(0)
 
 		case "-v", "--version":
-			fmt.Println("Version: 0.0.1")
+			fmt.Println("Version: 0.0.2")
 			os.Exit(0)
 
 		case "-n", "--namespace":
@@ -124,7 +124,7 @@ func configureClusterClient(namespace *string) *kubernetes.Clientset {
 func isOwnedByCronJob(job batchv1.Job, cronjob batchv1.CronJob) bool {
 	isowned := false
 	for _, owner := range job.OwnerReferences {
-		if owner.UID == cronjob.UID /*&& *owner.Controller*/{
+		if owner.UID == cronjob.UID /*&& *owner.Controller*/ {
 			isowned = true
 			break
 		}
@@ -135,7 +135,7 @@ func isOwnedByCronJob(job batchv1.Job, cronjob batchv1.CronJob) bool {
 func processJob(coreapi corev1typed.CoreV1Interface, job batchv1.Job, wg *sync.WaitGroup, flags CmdFlags) {
 	defer wg.Done()
 
-	pods, err := coreapi.Pods(flags.Namespace).List(context.TODO(), metav1.ListOptions{
+	pods, err := coreapi.Pods(flags.Namespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: "batch.kubernetes.io/controller-uid=" + string(job.UID),
 	})
 	if err != nil {
@@ -154,8 +154,8 @@ func processPod(coreapi corev1typed.CoreV1Interface, pod corev1.Pod, wg *sync.Wa
 	logs, err := coreapi.Pods(flags.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
 		Container:  flags.Container,
 		Timestamps: flags.Showtimestamps,
-		Follow: flags.Follow,
-	}).Stream(context.TODO())
+		Follow:     flags.Follow,
+	}).Stream(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
